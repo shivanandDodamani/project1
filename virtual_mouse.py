@@ -13,7 +13,7 @@ pyautogui.PAUSE = 0
 wCam, hCam = 640, 480       # Camera Resolution
 frameR = 120                # Frame Reduction (margin) - Increased for faster cursor movement
 smoothening = 3             # Smoothing Factor (Lower = faster response, less lag)
-click_threshold = 40        # Distance threshold for click
+click_threshold = 28        # Distance threshold for click
 # =================================================
 
 # Initialize MediaPipe
@@ -34,6 +34,13 @@ wScr, hScr = pyautogui.size()
 pLocX, pLocY = 0, 0     # Previous Location
 cLocX, cLocY = 0, 0     # Current Location
 pTime = 0
+left_down_th, left_up_th = 28, 38
+right_down_th, right_up_th = 28, 38
+hold_frames = 3
+left_hold = 0
+right_hold = 0
+left_clicked = False
+right_clicked = False
 
 # Capture Device
 cap = cv2.VideoCapture(0)
@@ -108,17 +115,27 @@ try:
                     # Mode 2: Clicking (Index and Thumb are close)
                     # Calculate distance between Index and Thumb
                     length_left = math.hypot(x1 - x_thumb, y1 - y_thumb)
-                    if length_left < click_threshold:
+                    if length_left < left_down_th:
+                        left_hold += 1
+                    elif length_left > left_up_th:
+                        left_hold = 0
+                        left_clicked = False
+                    if left_hold >= hold_frames and not left_clicked:
                         cv2.circle(img, (x1, y1), 15, (0, 255, 0), cv2.FILLED)
                         pyautogui.click()
-                        time.sleep(0.1) # Avoid multiple clicks
+                        left_clicked = True
 
                     # Right Click (Middle and Thumb are close)
                     length_right = math.hypot(x2 - x_thumb, y2 - y_thumb)
-                    if length_right < click_threshold:
+                    if length_right < right_down_th:
+                         right_hold += 1
+                    elif length_right > right_up_th:
+                         right_hold = 0
+                         right_clicked = False
+                    if right_hold >= hold_frames and not right_clicked:
                          cv2.circle(img, (x2, y2), 15, (0, 255, 0), cv2.FILLED)
                          pyautogui.rightClick()
-                         time.sleep(0.1)
+                         right_clicked = True
 
                     # Mode 3: Scrolling (Index and Middle both UP)
                     if fingers[0] == 1 and fingers[1] == 1:
